@@ -1,0 +1,171 @@
+# WCAG 2.2 Detection: vegaml vs LayaWCAG — research notes
+
+Case-study notes on using vegaml (frozen LLM reader + 14.3M vega-U decision engine) to detect
+WCAG 2.2 violations the way [turbolego/LayaWCAG](https://github.com/turbolego/LayaWCAG) does
+with its in-browser ONNX probe. The comparison sheet was originally written for the LayaWCAG
+project (`LayaWCAG/docs/md/wcag-vegaml-research.md`); this copy lives here because it now
+drives the concrete demo in `examples/wcag-demo/`.
+
+## Executive Summary
+
+Both **LayaWCAG** and **vegaml (vega-U)** use a frozen-language-model + lightweight
+decision-head architecture to score WCAG 2.2 accessibility violations. Their designs are
+very similar — shared-space engine, per-criterion output, one-pass batch scoring — but they
+diverge on **model base**, **training data**, **export format**, and **browser vs server
+usage**.
+
+### Comparison Table
+
+| Dimension | LayaWCAG | vegaml (vega-U) |
+|---|---|---|
+| **Base encoder** | ModernBERT-large (421M params, frozen) | Multiple frozen readers: 0.8B, 4B (Qwen3.5), Gemma 3 1B, SmolLM2 1.7B, any HF model via `load(backbone="…")` |
+| **Decision engine** | Linear probe (1024→63) + sigmoid; trained from scratch on WCAG data | Physics engine + per-reader port (14.3M shared weights); zero-shot off-the-shelf, then `fit()` for domain heads or `attach()` to add new readers |
+| **Training data** | AI-WCAG-Gauntlet (axe-core labels on real websites, 40 labeled samples) | Synthetic corpus (1000+ prompts per question) + calibration on user's own [state,label] pairs; no task-specific data shipped |
+| **WCAG criteria coverage** | 63 criteria, 52 have **no positive training example** (media, timing, sensory, reflow, etc.) → output those columns as noise | No WCAG data shipped; answer any question type (boolean/choice/score); calibrated probabilities + conformal sets + abstain flag |
+| **Export / serving** | ONNX → ONNX Runtime Web (browser, 16 data-parts, int8, ~395MB total) | Python HTTP API (`vegaml-serve`), MCP server, ONNX export (`export_engine()`), MLX (Apple silicon), Docker |
+| **Browser deployment** | Yes — demo at `turbolego.github.io/LayaWCAG/` | Server-side: a thin web UI on `vegaml-serve` (this repo: `examples/wcag-demo/`); the reader does not run in-browser |
+
+## Where vegaml Extends the Use Case
+
+### 1. **Zero-shot, no task-specific data**
+LayaWCAG's probe is noise on 52 of 63 criteria because those columns never saw a positive
+example. vegaml's engine answers each criterion as a *question* against the frozen reader,
+so a criterion with no training data is still a question the engine can reason about —
+weak, calibrated probabilities instead of pure noise. The demo ships a 63-criterion
+question sheet (`examples/wcag-demo/wcag_criteria.json`) and works off the shelf.
+
+### 2. **Structured / pydantic output for WCAG reports**
+LayaWCAG returns `{criterion, level, description, violation, probability}`. vegaml's
+`decide_model()` with a Pydantic model (install `vegaml[structured]`) returns validated,
+typed output. Example WCAG Pydantic model:
+
+```python
+from typing import Literal
+from pydantic import BaseModel, Field
+from vegaml.structured import decide_model
+
+class WcagViolation(BaseModel):
+    criterion: str = Field(description="WCAG criterion, e.g. '1.4.3'")
+    level: Literal["A", "AA", "AAA"] = Field(description="Conformance level")
+    violation: Literal["yes", "no"] = Field(description="Whether the criterion is violated")
+    probability: float = Field(description="p(violation) from the model")
+    confidence: float = Field(description="Calibrated confidence score")
+
+v = vegaml.load()
+ticket, result = decide_model(v, html_snippet, WcagViolation)
+```
+
+The structured output guarantees the fields exist and are typed, eliminates "quiet
+corruption" (invalid answers raise `ValidationError`), and the calibrated detail
+(probabilities, prediction sets, abstain) is preserved alongside the typed answer.
+
+### 3. **Calibration on your own domain**
+LayaWCAG's model is fixed after training; you cannot recalibrate it on your site's
+content. vegaml's `calibrate()` refits the temperature and conformal set on your labeled
+examples — essential if your site's "violation" distribution differs from the
+AI-WCAG-Gauntlet (e.g. mostly e-commerce product pages vs. blog content).
+
+### 4. **Attachment of new readers (model expansion)**
+If you want a larger or more capable reader than the default 0.8B, vegaml's `attach()`
+fits a new port from any HuggingFace model to the shared engine — without retraining the
+engine. This lets you experiment with 7B, 13B, or 27B readers while keeping the same
+WCAG question sheet.
+
+### 5. **ONNX export — the missing link for browser deployment**
+The main gap: vegaml can export to ONNX (`export_engine()`), but the current export
+targets CPU/GPU inference, not the browser-optimized ONNX Runtime Web path that LayaWCAG
+uses. If the ONNX export were adapted to the same input format, vegaml could ship a
+browser demo; until then the browser pattern is a server + thin UI (this is exactly what
+`examples/wcag-demo/` does).
+
+## Zero-shot PoC
+
+The minimal probe that verifies vegaml can score HTML snippets in engine mode:
+
+```python
+import json
+import vegaml
+
+v = vegaml.load()                              # 0.8B reader + 14.3M engine
+
+questions = {
+    "wcag_link_name":  {"type": "boolean",
+                        "instructions": "Does every link have a discernible purpose "
+                                          "(WCAG 2.4.4 / 2.4.9)?"},
+    "wcag_img_alt":    {"type": "boolean",
+                        "instructions": "Does every <img> carry a non-empty alt?"},
+    "wcag_heading_order": {"type": "score",
+                           "instructions": "How well ordered are heading levels?",
+                           "criteria": ["each heading increases by one or missing",
+                                        "one skipped level",
+                                        "multiple skipped or inverted levels"]},
+}
+
+html = '<div><a href="/more">click here</a><img src="banner.png"></div>'
+
+out = v.decide(html, questions, mode="engine")
+print(json.dumps(out["answers"], default=str, indent=2))
+```
+
+Each answer carries: `boolean` (p(yes)), `score` / `expected_score` (for score types),
+`probs` (calibrated distribution), `prediction_set` (conformal set at alpha), `abstain`,
+`unbound`, `confidence`.
+
+## The Webpage Demo: `examples/wcag-demo/`
+
+The LayaWCAG equivalent, rebuilt on vegaml's HTTP API:
+
+- `index.html` + `app.js` — paste HTML, get a verdict per criterion, a ranked table of all
+  63 p(violated) values, and a downloadable report JSON. Same UX as
+  `turbolego.github.io/LayaWCAG/`, minus the in-browser model.
+- `server.py` — stdlib-only host: static files + a same-origin `/api` proxy into
+  `vegaml-serve` (which sends no CORS headers).
+- `wcag_criteria.json` — the 63 LayaWCAG criteria rebuilt as vegaml boolean questions,
+  each `instructions` string carrying the criterion's intent so the zero-shot engine has
+  discriminative signal. Regenerated by `make_criteria.py`.
+
+Run: `vegaml-serve --model 0.8b --port 8080` + `python3 examples/wcag-demo/server.py`.
+
+## Migration Path: Moving from LayaWCAG → vegaml
+
+1. **Define your WCAG question sheet** — map each of the 63 WCAG 2.2 criteria to a
+   boolean/choice/score question. `examples/wcag-demo/wcag_criteria.json` is the starting
+   sheet; start with the criteria LayaWCAG *does* have data for (1.1.1, 2.4.7, 3.3.2,
+   4.1.2, …) plus any new ones you care about.
+2. **Run the PoC above** — verify vegaml can score your HTML snippets in engine mode.
+   The 0.8B reader is the default; switch to `vegaml.load("4b")` for harder cases.
+3. **Fit or calibrate** — if you have labeled [html_snippet, violation_labels] pairs,
+   run `fit(examples, questions)` to fit TTT heads, or `calibrate()` to refit
+   probabilities on your domain.
+4. **Optional: attach a larger reader** — `attach(backbone, texts, out_dir=…)` then
+   `vegaml.load(out_dir)`; the engine bytes stay identical, only the port + calibration
+   change.
+5. **ONNX export (future)** — once the export targets the browser path, embed it in a web
+   worker mirroring LayaWCAG's deployment.
+
+## Limitations (Honest Status, Both Systems)
+
+- **LayaWCAG**: 52 of 63 WCAG criteria have no positive training example. Output for
+  those columns is noise. No CSS/computed-styles access, no rendered layout, no
+  JavaScript behaviour simulation, no pointer hit-testing. The model sees markup text
+  only.
+- **vega-U (WCAG via questions)**: Same input constraints — the model sees text only,
+  no CSS cascade, no rendered media. Criteria that depend on visual layout, pointer
+  interaction, or real media (1.4.3/1.4.6 contrast, 1.4.10 reflow, 2.5.5 target size)
+  are inherently weak in text mode; vegaml's vision path (Qwen3.5 readers + image state,
+  `vegaml/_vision.py`) is where that goes. Calibration on your own data is essential for
+  domain shift.
+- **Both**: the model is a research demo, not a conformance tool. Pair with axe-core,
+  pa11y, or qualweb for rule-based checking on the criteria the model cannot reach.
+
+## Test status (2026-10-20)
+
+- vegaml 0.12.4 full pytest suite (torch 2.14.1 CPU, transformers 5.20.2): **267 passed, 6 skipped** in 8.1s on Linux. The skips are model-download-gated tests; everything runnable without the 0.8B reader passes.
+- Zero-shot WCAG 63-question PoC and the `examples/wcag-demo/` e2e run are logged below.
+
+## Test log
+
+### 2026-10-20 — 0.12.4 suite + zero-shot WCAG PoC
+
+1. **pytest** (dev venv, `env -u PYTHONPATH`): `267 passed, 6 skipped, 1 warning in 8.11s`. No failures on `main` @ `0eb2c28` ("the calibrate function survives the calibrate submodule's import").
+2. **Zero-shot 63-criterion decide()** on the vega-U 0.8B reader (`device="cpu"`): one `/decide` call with all 63 boolean questions against a snippet mixing three known violations (button without accessible name, img without alt, link with no discernible text). _Result: pending — filled in as soon as the first run lands._

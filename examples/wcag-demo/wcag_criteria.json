@@ -1,0 +1,443 @@
+[
+  {
+    "criterion": "1.1.1",
+    "principle": "Perceivable",
+    "level": "A",
+    "description": "Non-text Content",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.1.1 (non-text content), i.e. it is violated because non-text content (img, icon, canvas, chart, emoji-as-symbol) has no alt text or equivalent text alternative? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.2.1",
+    "principle": "Perceivable",
+    "level": "A",
+    "description": "Audio-only and Video-only",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.2.1 (audio-only and video-only), i.e. it is violated because audio-only or video-only content has no equivalent alternative? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.2.2",
+    "principle": "Perceivable",
+    "level": "A",
+    "description": "Captions (Prerecorded)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.2.2 (captions (prerecorded)), i.e. it is violated because prerecorded video has no captions? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.2.3",
+    "principle": "Perceivable",
+    "level": "A",
+    "description": "Audio Description or Media Alternative",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.2.3 (audio description or media alternative), i.e. it is violated because prerecorded audio has no audio description or media alternative? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.2.4",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Captions (Live)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.2.4 (captions (live)), i.e. it is violated because live video has no captions? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.2.5",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Audio Description (Prerecorded)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.2.5 (audio description (prerecorded)), i.e. it is violated because prerecorded video has no audio description? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.3.1",
+    "principle": "Perceivable",
+    "level": "A",
+    "description": "Info and Relationships",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.3.1 (info and relationships), i.e. it is violated because information and relationships (headings, tables, lists, form structure, labels) are not conveyed programmatically, only visually or positionally? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.3.2",
+    "principle": "Perceivable",
+    "level": "A",
+    "description": "Meaningful Sequence",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.3.2 (meaningful sequence), i.e. it is violated because the reading order in the markup does not match the meaningful sequence of the content? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.3.3",
+    "principle": "Perceivable",
+    "level": "A",
+    "description": "Sensory Characteristics",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.3.3 (sensory characteristics), i.e. it is violated because instructions rely only on sensory characteristics (shape, location, color) instead of text? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.3.4",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Orientation",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.3.4 (orientation), i.e. it is violated because content has a forced portrait or landscape orientation, or a fixed width? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.3.5",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Identify Input Purpose",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.3.5 (identify input purpose), i.e. it is violated because input fields collect personal information but are not marked with autocomplete attributes so their purpose can be identified? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.3.6",
+    "principle": "Perceivable",
+    "level": "AAA",
+    "description": "Identify Purpose",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.3.6 (identify purpose), i.e. it is violated because the purpose of forms, form fields and controls cannot be programmatically identified? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.1",
+    "principle": "Perceivable",
+    "level": "A",
+    "description": "Use of Color",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.1 (use of color), i.e. it is violated because color is the only visual way to convey information or to operate something? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.2",
+    "principle": "Perceivable",
+    "level": "A",
+    "description": "Audio Control",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.2 (audio control), i.e. it is violated because audio autoplays for more than three seconds without a pause/stop/volume control? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.3",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Contrast (Minimum)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.3 (contrast (minimum)), i.e. it is violated because text contrast is likely below 4.5:1 (foreground/background color values or a declared low-contrast theme are present)? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.4",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Resize Text",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.4 (resize text), i.e. it is violated because the markup uses fixed units or rigid containers that would break when text is resized to 200%? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.5",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Images of Text",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.5 (images of text), i.e. it is violated because an image of text is used to convey information instead of real text (not decorative)? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.6",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Contrast (Enhanced)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.6 (contrast (enhanced)), i.e. it is violated because body or heading text contrast is likely below 7:1 where an enhanced contrast level is required? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.7",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Low or No Background Audio",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.7 (low or no background audio), i.e. it is violated because background audio plays with speech content and is not stopped or substantially lower? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.8",
+    "principle": "Perceivable",
+    "level": "AAA",
+    "description": "Visual Presentation",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.8 (visual presentation), i.e. it is violated because visual presentation locks in width, height, orientation or a required scrolling that breaks reflow? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.9",
+    "principle": "Perceivable",
+    "level": "AAA",
+    "description": "Images of Text (No Exception)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.9 (images of text (no exception)), i.e. it is violated because an image of text is used where even the exceptions do not apply? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.10",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Reflow",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.10 (reflow), i.e. it is violated because content in a fixed-width container would require horizontal scrolling at 320 CSS pixels? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.11",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Non-text Contrast",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.11 (non-text contrast), i.e. it is violated because UI components and graphics need color to be understood but likely fall below 3:1 contrast? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.12",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Text Spacing",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.12 (text spacing), i.e. it is violated because adjusting text spacing would cause loss of content or functionality? Answer from the markup alone."
+  },
+  {
+    "criterion": "1.4.13",
+    "principle": "Perceivable",
+    "level": "AA",
+    "description": "Content on Hover or Focus",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 1.4.13 (content on hover or focus), i.e. it is violated because information is conveyed only through hover content that disappears when the element loses hover? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.1.1",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Keyboard",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.1.1 (keyboard), i.e. it is violated because functionality is operable with a pointer only (e.g. a custom drag interaction with no keyboard equivalent)? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.1.2",
+    "principle": "Operable",
+    "level": "A",
+    "description": "No Keyboard Trap",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.1.2 (no keyboard trap), i.e. it is violated because a keyboard trap is present: focus can enter a component but cannot leave it with keyboard alone? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.1.4",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Character Key Shortcuts",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.1.4 (character key shortcuts), i.e. it is violated because a single character key shortcut (e.g. pressing 'f' to find) exists and cannot be turned off? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.2.1",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Timing Adjustable",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.2.1 (timing adjustable), i.e. it is violated because time-limited content is presented without a way to extend, remove or adjust the time limit? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.2.2",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Pause, Stop, Hide",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.2.2 (pause, stop, hide), i.e. it is violated because moving, blinking or auto-updating content lasts more than five seconds without pause, stop or hide controls? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.3.1",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Three Flashes or Below Threshold",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.3.1 (three flashes or below threshold), i.e. it is violated because content flashes more than three times in one second or crosses the flash threshold? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.4.1",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Bypass Blocks",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.4.1 (bypass blocks), i.e. it is violated because there is no way to bypass repeated blocks: no landmark structure and no first-link-to-content pattern? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.4.2",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Page Titled",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.4.2 (page titled), i.e. it is violated because the page has no title, or a title that is generic or missing? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.4.3",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Focus Order",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.4.3 (focus order), i.e. it is violated because focusable elements receive focus in an order that does not preserve meaning and usability? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.4.4",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Link Purpose (In Context)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.4.4 (link purpose (in context)), i.e. it is violated because links have text that is indistinguishable in context (e.g. every link says 'here' or 'click')? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.4.5",
+    "principle": "Operable",
+    "level": "AA",
+    "description": "Multiple Ways",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.4.5 (multiple ways), i.e. it is violated because there is only one way to find a page (no second navigation mechanism shown for multi-page content)? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.4.6",
+    "principle": "Operable",
+    "level": "AA",
+    "description": "Headings and Labels",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.4.6 (headings and labels), i.e. it is violated because headings and labels do not describe the topic or purpose of their content? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.4.7",
+    "principle": "Operable",
+    "level": "AA",
+    "description": "Focus Visible",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.4.7 (focus visible), i.e. it is violated because focus is not visible on any component, or the visible focus indicator is removed by styling? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.4.11",
+    "principle": "Operable",
+    "level": "AA",
+    "description": "Focus Not Obscured (Minimum)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.4.11 (focus not obscured (minimum)), i.e. it is violated because focus is partially obscured by other content (a sticky footer/header or toolbar covers the focused element)? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.4.12",
+    "principle": "Operable",
+    "level": "AAA",
+    "description": "Focus Not Obscured (Enhanced)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.4.12 (focus not obscured (enhanced)), i.e. it is violated because the entire focused component is obscured by non-essential content? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.4.13",
+    "principle": "Operable",
+    "level": "AAA",
+    "description": "Focus Appearance",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.4.13 (focus appearance), i.e. it is violated because the visible focus indicator is likely too thin or small to see (thin outlines, small padding)? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.5.1",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Pointer Gestures",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.5.1 (pointer gestures), i.e. it is violated because a multi-point or path-based gesture (pinch, rotate, two-finger swipe) has no single-pointer or keyboard alternative? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.5.2",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Pointer Cancellation",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.5.2 (pointer cancellation), i.e. it is violated because a multi-point or path-based gesture cannot be cancelled and reversed? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.5.3",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Label in Name",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.5.3 (label in name), i.e. it is violated because the visible label of an input or control is not part of its accessible name? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.5.4",
+    "principle": "Operable",
+    "level": "A",
+    "description": "Motion Actuation",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.5.4 (motion actuation), i.e. it is violated because an operation is triggered by device motion (shake, tilt) with no interface alternative? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.5.5",
+    "principle": "Operable",
+    "level": "AAA",
+    "description": "Target Size (Large)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.5.5 (target size (large)), i.e. it is violated because clickable target sizes are likely smaller than 44x44 CSS pixels? Answer from the markup alone."
+  },
+  {
+    "criterion": "2.5.6",
+    "principle": "Operable",
+    "level": "AAA",
+    "description": "Concurrent Input Mechanisms",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 2.5.6 (concurrent input mechanisms), i.e. it is violated because a component requires a composite pointer+keyboard or multi-pointer+touch action with no single-mechanism alternative? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.1.1",
+    "principle": "Understandable",
+    "level": "A",
+    "description": "Language of Page",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.1.1 (language of page), i.e. it is violated because the page has no lang attribute, or the lang does not match the content? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.1.2",
+    "principle": "Understandable",
+    "level": "AA",
+    "description": "Language of Parts",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.1.2 (language of parts), i.e. it is violated because text passages in a different language are not marked with their own lang attribute? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.2.1",
+    "principle": "Understandable",
+    "level": "A",
+    "description": "On Focus",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.2.1 (on focus), i.e. it is violated because receiving focus automatically changes the context or adds new focusable content without warning? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.2.2",
+    "principle": "Understandable",
+    "level": "A",
+    "description": "On Input",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.2.2 (on input), i.e. it is violated because changing a form control's value automatically submits the form or triggers a significant change without confirmation? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.2.3",
+    "principle": "Understandable",
+    "level": "AA",
+    "description": "Consistent Navigation",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.2.3 (consistent navigation), i.e. it is violated because the same user interface is not reused for the same function across these pages? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.2.4",
+    "principle": "Understandable",
+    "level": "AA",
+    "description": "Consistent Identification",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.2.4 (consistent identification), i.e. it is violated because components with the same function are not identified the same way across pages? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.2.6",
+    "principle": "Understandable",
+    "level": "A",
+    "description": "Consistent Help",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.2.6 (consistent help), i.e. it is violated because help (a help mechanism for this content) is not consistently available on request where the same task recurs across pages? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.3.1",
+    "principle": "Understandable",
+    "level": "A",
+    "description": "Error Identification",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.3.1 (error identification), i.e. it is violated because an error is identified but not described in text (only color or icon)? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.3.2",
+    "principle": "Understandable",
+    "level": "A",
+    "description": "Labels or Instructions",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.3.2 (labels or instructions), i.e. it is violated because form inputs have no visible label or instruction? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.3.3",
+    "principle": "Understandable",
+    "level": "AA",
+    "description": "Error Suggestion",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.3.3 (error suggestion), i.e. it is violated because an error is detected but no correction suggestion is offered? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.3.4",
+    "principle": "Understandable",
+    "level": "AA",
+    "description": "Error Prevention (Legal, Financial, Medical)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.3.4 (error prevention (legal, financial, medical)), i.e. it is violated because errors in important data are not reversible or no review/confirmation mechanism is present? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.3.7",
+    "principle": "Understandable",
+    "level": "A",
+    "description": "Redundant Input",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.3.7 (redundant input), i.e. it is violated because the same personal information is asked for again although it is already stored and can be auto-filled? Answer from the markup alone."
+  },
+  {
+    "criterion": "3.3.8",
+    "principle": "Understandable",
+    "level": "AA",
+    "description": "Accessible Authentication (Minimum)",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 3.3.8 (accessible authentication (minimum)), i.e. it is violated because authentication depends only on a cognitive function (reading a math problem, remembering a sequence) without a cognitive alternative? Answer from the markup alone."
+  },
+  {
+    "criterion": "4.1.1",
+    "principle": "Robust",
+    "level": "A",
+    "description": "Parsing",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 4.1.1 (parsing), i.e. it is violated because the markup does not parse: unclosed tags, duplicate IDs, overlapping ARIA roles, or ARIA used on non-focusable elements? Answer from the markup alone."
+  },
+  {
+    "criterion": "4.1.2",
+    "principle": "Robust",
+    "level": "A",
+    "description": "Name, Role, Value",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 4.1.2 (name, role, value), i.e. it is violated because a control's name, role or value cannot be programmatically determined (custom widget without ARIA role/state)? Answer from the markup alone."
+  },
+  {
+    "criterion": "4.1.3",
+    "principle": "Robust",
+    "level": "AA",
+    "description": "Status Messages",
+    "instructions": "Does this HTML markup fail WCAG 2.2 criterion 4.1.3 (status messages), i.e. it is violated because status messages are not announced: they use a div without role=status or aria-live? Answer from the markup alone."
+  }
+]

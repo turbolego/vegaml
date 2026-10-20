@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vegaml WCAG 2.2 detector</title>
+<script src="./app.js" defer></script>
+<style>
+  :root{
+    --bg:#f6f5f1; --card:#ffffff; --ink:#1c1b19; --ink2:#5b5850; --line:#e3e0d8;
+    --accent:#2a5bd7; --accent-ink:#ffffff; --good:#1f7a4d; --warn:#b4570a; --bar:#d9e2fb; --bar-top:#2a5bd7;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    --bg:#151513; --card:#1e1d1a; --ink:#f0eee8; --ink2:#a6a297; --line:#33312c;
+    --accent:#7ea2ff; --accent-ink:#0d1220; --good:#5fcf95; --warn:#f0a35c; --bar:#2a3555; --bar-top:#7ea2ff; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:980px;margin:0 auto;padding:28px 16px 64px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--ink2);margin:0 0 20px;max-width:70ch}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2);margin:0 0 10px;font-weight:600}
+  label{display:block;font-size:13px;color:var(--ink2);margin:0 0 4px}
+  select,textarea,input[type=number],input[type=url]{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+  textarea{font-family:var(--mono);font-size:13px;resize:vertical}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end}
+  button{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 16px;cursor:pointer}
+  button:disabled{opacity:.5;cursor:wait}
+  .ghost{background:transparent;color:var(--accent);border-color:var(--line)}
+  .ghost:hover,.row button:hover{filter:brightness(1.06)}
+  .status{font-size:13px;color:var(--ink2);margin-top:8px;min-height:1.2em}
+  .status.err{color:var(--warn)}
+  .status.ok{color:var(--good)}
+  table{border-collapse:collapse;width:100%}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+  th{color:var(--ink2);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  .crit{font-family:var(--mono);font-weight:700}
+  .lv{font-size:11px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:1px 5px;margin-left:4px}
+  .lv.aaa{color:var(--warn);border-color:var(--warn)}
+  .pct{font-family:var(--mono);text-align:right;white-space:nowrap}
+  .bar{background:var(--bar);border-radius:4px;height:6px;min-width:60px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--bar-top)}
+  .flag{font-size:11px;font-weight:700;color:var(--warn)}
+  .muted{color:var(--ink2)}
+  details{margin-top:14px}
+  summary{cursor:pointer;font-size:13px;font-weight:600}
+  pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;font-size:12px;max-height:320px}
+  .pill{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px;color:var(--ink2);margin-right:6px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+  <h1>vegaml WCAG 2.2 detector</h1>
+  <p class="sub">Paste HTML markup and score it against all 63 WCAG 2.2 success criteria with
+  <strong>vegaml</strong> (frozen LLM reader + 14.3M decision engine), zero-shot or calibrated.
+  Same question sheet LayaWCAG ships — the probabilities here are vegaml's calibrated outputs,
+  not Laya's. The reader sees markup text only: contrast- and layout-only criteria need
+  computed styles to be conclusive.</p>
+
+  <div class="card">
+    <h2>Server</h2>
+    <div class="row">
+      <div>
+        <label for="server">vegaml-serve API URL (CORS, or the same-origin /api proxy)</label>
+        <input type="url" id="server" value="/api">
+      </div>
+      <button class="ghost" id="check">Check server</button>
+    </div>
+    <div class="status" id="serverStatus">No model loaded yet.</div>
+  </div>
+
+  <div class="card">
+    <h2>HTML to check</h2>
+    <div class="row">
+      <div>
+        <label for="example">Example snippet</label>
+        <select id="example">
+          <option value="">— paste your own —</option>
+          <option>Image without alt text</option>
+          <option>Button with no accessible name</option>
+          <option>Form input without label</option>
+          <option>Heading level skipped</option>
+          <option>Link with no discernible text</option>
+          <option>Iframe without title</option>
+          <option>Clean semantic snippet</option>
+        </select>
+      </div>
+      <div>
+        <label for="threshold">Violation threshold p(violated) ≥</label>
+        <input type="number" id="threshold" value="0.5" min="0" max="1" step="0.05">
+      </div>
+    </div>
+    <label for="html" style="margin-top:12px">HTML fragment</label>
+    <textarea id="html" rows="9" placeholder='&lt;img src="chart.png"&gt;'></textarea>
+    <div style="margin-top:12px">
+      <button id="analyze" disabled>Analyze (63 criteria)</button>
+      <button class="ghost hidden" id="download">Download report JSON</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="card hidden" id="results">
+    <h2>Results</h2>
+    <div style="margin-bottom:12px" id="summary"></div>
+    <div id="violationWrap">
+      <table>
+        <thead><tr><th>Criterion</th><th>Description</th><th>p(violated)</th><th style="width:34%">Confidence</th></tr></thead>
+        <tbody id="violationRows"></tbody>
+      </table>
+    </div>
+    <details>
+      <summary>All 63 criteria, ranked by p(violated)</summary>
+      <table>
+        <thead><tr><th>Criterion</th><th>Description</th><th>p(violated)</th><th style="width:34%">Confidence</th></tr></thead>
+        <tbody id="allRows"></tbody>
+      </table>
+    </details>
+    <details>
+      <summary>Raw vegaml answer JSON</summary>
+      <pre id="raw"></pre>
+    </details>
+  </div>
+</main>
+</body>
+</html>

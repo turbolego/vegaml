@@ -64,7 +64,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         req = urllib.request.Request(url, data=body if method == "POST" else None, method=method,
                                      headers={"Content-Type": ctype or "application/json"})
         try:
-            with urllib.request.urlopen(req, timeout=180) as r:
+            with urllib.request.urlopen(req, timeout=1800) as r:
                 out = r.read()
                 self._send(r.status, out, r.headers.get("Content-Type", "application/json"))
         except Exception as e:

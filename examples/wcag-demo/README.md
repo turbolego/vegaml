@@ -26,8 +26,8 @@ the 63-row table. Regenerate after editing intents with `python3 make_criteria.p
 ```bash
 pip install "vegaml[serve]"
 
-# 1) the model server (first start downloads the ~0.5GB 0.8B reader)
-vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080 &
+# 1) the model server (--preload loads before binding, so /health only goes green when ready)
+vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080 --preload &
 
 # 2) this demo: static files + a same-origin /api proxy to the server above
 python3 server.py

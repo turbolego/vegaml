@@ -160,12 +160,43 @@ Run: `vegaml-serve --model 0.8b --port 8080` + `python3 examples/wcag-demo/serve
 
 ## Test status (2026-10-20)
 
-- vegaml 0.12.4 full pytest suite (torch 2.14.1 CPU, transformers 5.20.2): **267 passed, 6 skipped** in 8.1s on Linux. The skips are model-download-gated tests; everything runnable without the 0.8B reader passes.
-- Zero-shot WCAG 63-question PoC and the `examples/wcag-demo/` e2e run are logged below.
+- vegaml 0.12.4 full pytest suite (torch 2.14.1 CPU, transformers 5.20.2): **278 passed, 3 skipped** (Apple-only skips) in ~18s on Linux, with all extras installed.
+- Zero-shot WCAG PoC **and** the `examples/wcag-demo/` e2e both PASSED (63/63 answers; injected violations ranked top-3). Full log below.
 
 ## Test log
 
 ### 2026-10-20 — 0.12.4 suite + zero-shot WCAG PoC
 
-1. **pytest** (dev venv, `env -u PYTHONPATH`): `267 passed, 6 skipped, 1 warning in 8.11s`. No failures on `main` @ `0eb2c28` ("the calibrate function survives the calibrate submodule's import").
-2. **Zero-shot 63-criterion decide()** on the vega-U 0.8B reader (`device="cpu"`): one `/decide` call with all 63 boolean questions against a snippet mixing three known violations (button without accessible name, img without alt, link with no discernible text). _Result: pending — filled in as soon as the first run lands._
+1. **pytest** (dev venv, `env -u PYTHONPATH`): with `vegaml[serve,dev,onnx,mcp,structured]` + langchain-core → **278 passed, 3 skipped in ~18s** on `main` @ `0eb2c28`. The 3 remaining skips are Apple-only (`vegaml[mlx]` ×1, MPS hardware ×2).
+2. **Demo static/proxy server**: `examples/wcag-demo/server.py` serves `index.html` (correct content-type, 200) and `wcag_criteria.json` (200, all 63 criteria present) on its own; the 502 path when `vegaml-serve` is down confirmed in e2e below.
+3. **Zero-shot 63-criterion decide() + full e2e** (vega-U 0.8B reader, `device="cpu"`, snippet mixing three known violations: button without accessible name, img without alt, link with no discernible text): one `/decide` call through the demo's exact payload (63 boolean questions). Sequence: (a) first run with no kernels — reference-conv path, ~14 min of inference, killed; (b) with `fla-core` installed — `/v1/decide` → HTTP 400 "0 active drivers" (Triton crash, see below); (c) `fla-core` removed — reference PyTorch path, single-question e2e verified (p(violated)=0.9999 in ~0.6 s).
+
+   **63-question batch through the demo proxy: PASSED.** All 63 answers returned in **523.6 s wall** (CPU reference kernels; `n_tokens=11863`). The three injected violations ranked at the top of the p(violated) distribution:
+
+   | rank | criterion | p(violated) | |
+   |---|---|---|---|
+   | 1 | 1.1.1 Non-text Content | 0.974 | ⌂ injected: `<img>` no alt |
+   | 3 | 4.1.2 Name/Role/Value | 0.912 | ⌂ injected: `<div role=button>` no name |
+   | — | 2.4.4 Link Purpose | 0.876 | ⌂ injected: link with no discernible text |
+
+   Top-10 overall: 1.1.1 .97, 1.4.5 .96, 1.4.9 .95, 2.4.5 .95, 1.4.11 .94, 3.3.1 .93, 4.1.1 .93, 2.4.1 .92, 3.1.1 .92, 1.4.4 .92. Bottom-3 (lowest p): 1.4.7 .39, 1.2.4 .30, 1.4.2 .27. No `abstain` / `unbound` flags fired on any criterion at the default alpha=0.1.
+
+   The 523 s is the CPU-reference-kernel cost for one full 63-question scan; on a CUDA box with the fla/Triton kernels the same call drops to well under a second. The demo page already surfaces per-call latency, so this is visible to the user, not hidden.
+
+### CPU gotcha: do NOT install the fla kernels on a CPU-only box
+
+The Qwen3.5 readers are hybrid (gated-delta-net) models. When `fla-core` / `flash-linear-attention`
+is installed, transformers routes `chunk_gated_delta_rule` through fla's **Triton** kernels; on a
+CPU-only machine Triton has no active driver and the first forward pass dies with
+
+```
+RuntimeError: 0 active drivers ([]). There should only be one.
+```
+
+— which `vegaml-serve` surfaces as an HTTP 400 on `/v1/decide` (health still looks fine).
+With the fla packages **removed**, transformers falls back to its pure-PyTorch reference
+implementations (`torch_chunk_gated_delta_rule` + reference `causal_conv1d_fn`), which run
+correctly on CPU: a single-question `/v1/decide` answered in **~0.6–0.9 s** and returned
+the expected verdict (p(violated)=0.9999 for a bare `<img>` with no alt). The dev venv has
+`fla-core` uninstalled; keep it that way for CPU runs. (On a CUDA machine the fla/Triton
+path is the fast one — install it there.)

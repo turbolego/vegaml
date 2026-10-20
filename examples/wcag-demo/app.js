@@ -27,9 +27,13 @@ async function checkServer() {
   const s = $("serverStatus"); s.className = "status"; s.textContent = "Checking…";
   try {
     const h = await fetchJSON(server() + "/health");
-    const m = await fetchJSON(server() + "/model");
-    s.className = "status ok";
-    s.textContent = `vegaml ${m.model || "default"} · reader ${m.backbone || "?"} · context ${m.max_len ?? "?"} tokens · model_loaded=${h.model_loaded}`;
+    const m = await fetchJSON(server() + "/model").catch(() => null);
+    s.className = h.model_loaded ? "status ok" : "status";
+    if (h.model_loaded) {
+      s.textContent = `vegaml ${m?.model || "default"} · reader ${m?.backbone || "?"} · context ${m?.max_len ?? "?"} tokens · ready`;
+    } else {
+      s.textContent = "Server up, model still loading — wait a minute and check again (cold load of the 0.8B reader takes several minutes).";
+    }
   } catch (e) {
     s.className = "status err";
     s.textContent = `Cannot reach server (${e.message}). Run:  vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080`;

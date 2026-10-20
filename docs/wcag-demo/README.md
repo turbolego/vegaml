@@ -23,6 +23,10 @@ the 63-row table. Regenerate after editing intents with `python3 make_criteria.p
 
 ## Run it
 
+Two modes:
+
+### A. Local (same-origin proxy — no CORS involved)
+
 ```bash
 pip install "vegaml[serve]"
 
@@ -34,14 +38,27 @@ python3 server.py
 # -> http://127.0.0.1:8090
 ```
 
-Open the page, click **Check server**, pick an example snippet or paste your own markup,
-set a threshold (default 0.5), click **Analyze**. The page posts one `/v1/decide` call with
-all 63 questions on the pasted state; results render as a violations table + a full ranked
-list + the raw answer JSON, downloadable as `wcag-vegaml-report.json`.
+On `localhost`/`127.0.0.1` the page defaults its API base to `/api` (the proxy).
 
-A CORS-able alternative: skip `server.py`, host `index.html`/`app.js`/`wcag_criteria.json`
-anywhere, and set the API URL input to `http://127.0.0.1:8080` (vegaml-serve currently sends
-no CORS headers, so it must be same-origin, or behind a reverse proxy that adds them).
+### B. GitHub Pages (this folder is under `docs/` so Pages can deploy it)
+
+GitHub Pages only serves the repo root or `docs/`, so the demo lives at `docs/wcag-demo/`
+and deploys to `https://turbolego.github.io/vegaml/wcag-demo/` (Pages setting: deploy the
+`docs` folder). The page has no model of its own — it talks to a `vegaml-serve` you run
+locally (or on a machine you can reach), so start the server with CORS:
+
+```bash
+vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080 --preload --cors
+```
+
+On a non-localhost host the page defaults its API base to `http://127.0.0.1:8080`;
+override with `?apiBase=<url>`. (The demo must remain static: Pages has no server, so the
+reader + engine always run wherever *you* point the page.)
+
+In both modes: open the page, click **Check server**, pick an example snippet or paste your
+own markup, set a threshold (default 0.5), click **Analyze**. The page posts one
+`/v1/decide` call with all 63 questions on the pasted state; results render as a violations
+table + a full ranked list + the raw answer JSON, downloadable as `wcag-vegaml-report.json`.
 
 ## What you get (and what you don't)
 

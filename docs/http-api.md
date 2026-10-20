@@ -5,6 +5,10 @@ pip install "vegaml[serve]"
 vegaml-serve --model 4b --port 8000          # --preload to load before binding
 ```
 
+`--cors` adds CORS headers so a page hosted on another origin (e.g. the GitHub Pages demo
+in `docs/wcag-demo/`) can call the server directly; `--cors-origins` limits the allowed
+origins (default `*`). Without the flag the server stays same-origin-only.
+
 ## Endpoints
 
 | Route | What it does |

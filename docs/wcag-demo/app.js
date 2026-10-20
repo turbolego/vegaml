@@ -20,6 +20,14 @@ const EXAMPLES = {
 let criteria = [];        // [{criterion, principle, level, description, instructions}]
 let lastReport = null;    // the full report we can download
 
+// Default API base: the same-origin /api proxy when the page runs next to server.py,
+// otherwise the local vegaml-serve directly (hosting the static page on GitHub Pages
+// needs the server to run with --cors).
+function defaultServer() {
+  const h = location.hostname;
+  return (h === "localhost" || h === "127.0.0.1") ? "/api" : "http://127.0.0.1:8080";
+}
+
 async function fetchJSON(url, opt) { const r = await fetch(url, opt); if (!r.ok) throw new Error(`${r.status} ${r.statusText}`); return r.json(); }
 function server() { return $("server").value.replace(/\/$/, ""); }
 
@@ -36,7 +44,7 @@ async function checkServer() {
     }
   } catch (e) {
     s.className = "status err";
-    s.textContent = `Cannot reach server (${e.message}). Run:  vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080`;
+    s.textContent = `Cannot reach server (${e.message}). Run:  vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080 --preload --cors`;
   }
 }
 
@@ -136,6 +144,7 @@ function download() {
 // --- wire up ---
 async function init() {
   criteria = await fetchJSON(new URL("./wcag_criteria.json", location.href));
+  $("server").value = new URLSearchParams(location.search).get("apiBase") || defaultServer();
   $("example").addEventListener("change", (e) => { const t = EXAMPLES[e.target.value]; if (t) $("html").value = t; });
   $("check").addEventListener("click", checkServer);
   $("analyze").addEventListener("click", analyze);

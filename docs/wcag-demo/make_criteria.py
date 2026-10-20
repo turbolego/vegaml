@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build examples/wcag-demo/wcag_criteria.json: the 63 WCAG 2.2 criteria as vegaml
+"""Build docs/wcag-demo/wcag_criteria.json: the 63 WCAG 2.2 criteria as vegaml
 boolean questions, matching the criterion list LayaWCAG scores (its model/wcag_criteria.json).
 
 Each entry: criterion, principle, level, description (LayaWCAG's), and `instructions` —

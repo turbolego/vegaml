@@ -39,13 +39,27 @@ class BatchRequest(BaseModel):
     items: List[DecideRequest] = Field(..., min_length=1, max_length=256)
 
 
-def create_app(model=None, model_name: Optional[str] = None, load_kw: Optional[Dict] = None) -> FastAPI:
-    """The FastAPI app. Pass a loaded model (tests do), or a name and the first request loads it."""
+def create_app(model=None, model_name: Optional[str] = None, load_kw: Optional[Dict] = None,
+               cors: bool = False, cors_origins: Optional[List[str]] = None) -> FastAPI:
+    """The FastAPI app. Pass a loaded model (tests do), or a name and the first request loads it.
+
+    cors=True adds CORSMiddleware so a static page hosted on another origin (e.g. the
+    GitHub Pages demo) can call the local server directly. Default origins are "*".
+    """
     app = FastAPI(title="vegaml", docs_url="/docs")
     app.state.model = model
     app.state.model_name = model_name
     app.state.load_kw = load_kw or {}
     app.state.lock = threading.Lock()
+
+    if cors:
+        from fastapi.middleware.cors import CORSMiddleware
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins or ["*"],
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["*"],
+        )
 
     def _model():
         with app.state.lock:
@@ -97,6 +111,11 @@ def main(argv: Optional[list] = None) -> int:
     ap.add_argument("--max-len", type=int, default=None)
     ap.add_argument("--preload", action="store_true",
                     help="load the checkpoint before binding the port instead of on the first request")
+    ap.add_argument("--cors", action="store_true",
+                    help="add CORS headers so a page on another origin (e.g. the GitHub Pages demo) "
+                         "can call this server; use with --host 0.0.0.0 or a reachable address")
+    ap.add_argument("--cors-origins", default=None,
+                    help="comma-separated allow-list for --cors (default: *)")
     args = ap.parse_args(argv)
     import uvicorn
     load_kw = {}
@@ -108,7 +127,9 @@ def main(argv: Optional[list] = None) -> int:
     if args.preload:
         import vegaml
         model = vegaml.load(args.model, **load_kw)
-    app = create_app(model=model, model_name=args.model, load_kw=load_kw)
+    origins = [o.strip() for o in args.cors_origins.split(",")] if args.cors_origins else None
+    app = create_app(model=model, model_name=args.model, load_kw=load_kw,
+                     cors=args.cors, cors_origins=origins)
     uvicorn.run(app, host=args.host, port=args.port)
     return 0
 

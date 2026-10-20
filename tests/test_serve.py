@@ -114,6 +114,20 @@ def test_model_errors_map_to_400_with_the_message(served):
     assert "unknown question type" in r.json()["detail"]
 
 
+def test_cors_is_opt_in():
+    v = _FakeVega()
+    plain = TestClient(create_app(model=v, model_name="fake"))
+    assert "access-control-allow-origin" not in plain.get("/health").headers
+
+    cors = TestClient(create_app(model=v, model_name="fake", cors=True))
+    r = cors.options("/v1/decide", headers={"Origin": "https://turbolego.github.io",
+                                             "Access-Control-Request-Method": "POST"})
+    assert r.status_code == 200
+    assert r.headers.get("access-control-allow-origin")
+    assert "access-control-allow-origin" in cors.get("/health",
+                                                     headers={"Origin": "https://example.org"}).headers
+
+
 def test_entry_point_and_extra_are_declared():
     if sys.version_info >= (3, 11):
         import tomllib

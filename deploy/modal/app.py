@@ -71,11 +71,19 @@ def _load():
 @app.function(**SPECS)
 @modal.asgi_app(label="api")
 def api():
-    """The web endpoint: vegaml's FastAPI app with CORS — same routes as vegaml-serve."""
+    """The web endpoint: vegaml's FastAPI app with CORS — same routes as vegaml-serve.
+
+    Note: we attach the CORSMiddleware here instead of via create_app(cors=...),
+    because the PyPI vegaml 0.12.4 release predates that parameter (it's in git
+    main but not published); this keeps the image on the plain PyPI package.
+    """
+    from fastapi.middleware.cors import CORSMiddleware
     from vegaml.serve import create_app
     model = _load()
-    return create_app(model=model, model_name="0.8b",
-                      cors=True, cors_origins=["*"])
+    app = create_app(model=model, model_name="0.8b")
+    app.add_middleware(CORSMiddleware, allow_origins=["*"],
+                       allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["*"])
+    return app
 
 
 @app.function(image=IMAGE, volumes={"/hf": hf_cache},

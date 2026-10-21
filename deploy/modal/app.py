@@ -47,9 +47,11 @@ IMAGE = (
 )
 
 # 4 vCPU / 16 GB: warm RSS is ~4–5 GB. timeout=3600 covers the long 63-question
-# batch on CPU. scaledown_window: sleep after ~10 idle minutes ($0 asleep).
+# batch on CPU. startup_timeout=3600: the ASGI factory (model load from the
+# volume) runs at container start and needs more than the 300 s default budget
+# on a cold volume. scaledown_window: sleep after ~10 idle minutes ($0 asleep).
 SPECS = dict(image=IMAGE, volumes={"/hf": hf_cache}, cpu=4, memory="16GB",
-             timeout=3600, scaledown_window=600)
+             timeout=3600, startup_timeout=3600, scaledown_window=600)
 
 
 _MODEL = None

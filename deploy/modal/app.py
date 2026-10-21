@@ -76,6 +76,9 @@ def api():
     Note: we attach the CORSMiddleware here instead of via create_app(cors=...),
     because the PyPI vegaml 0.12.4 release predates that parameter (it's in git
     main but not published); this keeps the image on the plain PyPI package.
+
+    Also add /model and /decide aliases (without /v1) so the remote demo page
+    works without code changes.
     """
     from fastapi.middleware.cors import CORSMiddleware
     from vegaml.serve import create_app
@@ -83,6 +86,14 @@ def api():
     app = create_app(model=model, model_name="0.8b")
     app.add_middleware(CORSMiddleware, allow_origins=["*"],
                        allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["*"])
+    # Alias /model -> /v1/model, /decide -> /v1/decide for remote demo compatibility
+    @app.get("/model")
+    async def model_alias(request: Request):
+        return await app(request.scope, request.receive, request.send)
+
+    @app.post("/decide")
+    async def decide_alias(request: Request):
+        return await app(request.scope, request.receive, request.send)
     return app
 
 

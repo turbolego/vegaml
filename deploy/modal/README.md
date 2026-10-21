@@ -23,31 +23,29 @@ persistent Volume removes the ~7-minute model download from every cold start.
 
 ## Setup (once)
 
-On any machine with the `modal` CLI and a [Modal account](https://modal.com)
-(Starter plan: $0/mo + $30/mo free compute credit):
+On any machine with a [Modal account](https://modal.com) (Starter plan:
+$0/mo + $30/mo free compute credit):
 
 ```bash
 pip install modal
-modal setup
+# credentials: MODAL_TOKEN_ID + MODAL_TOKEN_SECRET (env vars or deploy/modal/.env)
 ```
-
-## Prewarm the model volume (once, ~16 GB·min, a few cents)
-
-```bash
-modal run deploy/modal/app.py prewarm
-```
-
-Downloads the 0.8B reader + engine into the `vegaml-hf-cache` Volume so future
-cold starts load in ~1–2 min instead of ~7 min.
 
 ## Deploy
 
 ```bash
-modal deploy deploy/modal/app.py
+bash deploy/modal/deploy.sh
 ```
 
-Deploys the `api` web endpoint and prints its URL, e.g.
-`https://<workspace>-vegaml-wcag-demo.<region>.modal.host`.
+The runner authenticates with the `MODAL_TOKEN_ID` + `MODAL_TOKEN_SECRET` env
+vars (or `deploy/modal/.env`, gitignored) — no `modal setup` — then prewarms
+the volume, deploys, smoke-tests `/health` + CORS, and prints the `?apiBase=`
+URL. Or step by step:
+
+```bash
+modal run deploy/modal/app.py prewarm      # one-off: cache the model in the Volume
+modal deploy deploy/modal/app.py           # deploys the /v1/decide endpoint
+```
 
 ## Use it
 

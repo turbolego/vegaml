@@ -45,7 +45,7 @@ echo "==> auth check (modal token info)"
 "$MODAL_CLI" token info || { echo "auth failed — check the token pair" >&2; exit 1; }
 
 echo "==> prewarming model volume (one-off; skips if already warmed)"
-"$MODAL_CLI" run deploy/modal/app.py prewarm
+"$MODAL_CLI" run deploy/modal/app.py::prewarm
 
 echo "==> deploying web endpoint"
 DEPLOY_OUT=$("$MODAL_CLI" deploy deploy/modal/app.py)

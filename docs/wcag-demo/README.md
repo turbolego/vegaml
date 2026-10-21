@@ -60,6 +60,25 @@ own markup, set a threshold (default 0.5), click **Analyze**. The page posts one
 `/v1/decide` call with all 63 questions on the pasted state; results render as a violations
 table + a full ranked list + the raw answer JSON, downloadable as `wcag-vegaml-report.json`.
 
+## Troubleshooting: "Cannot reach server" on the hosted page
+
+The GitHub Pages page is **HTTPS**; browsers block an HTTPS page from fetching an
+**`http://`** backend (active mixed content). So `?apiBase=http://<any-ip>:8080` will fail
+in the browser even when the server is up and `--cors` is set — the block is policy, not
+connectivity. The options, in order of effort:
+
+1. **Local mode (no frictions)** — mode A above: the page and the backend share an origin
+   (`http://127.0.0.1:8090`), so nothing is blocked. This is the default dev workflow.
+2. **Same-machine backend** — run `vegaml-serve ... --cors` on the machine whose browser
+   opens the hosted page and keep the default `http://127.0.0.1:8080`; browsers allow
+   `http://127.0.0.1` from an HTTPS page (potentially-trustworthy origin), unlike remote
+   IPs.
+3. **HTTPS backend on the tailnet** — on the backend box: `sudo tailscale serve --bg 8080`
+   (needs sudo: the serve config is root-gated), then open the hosted page with
+   `?apiBase=https://100.83.145.68` (the tailnet cert is trusted by tailnet clients).
+4. **In-browser ONNX (roadmap)** — like LayaWCAG: no server at all. Needs the 0.8B reader
+   exported to ONNX Runtime Web; `export_engine()` ships the 14.3M engine only.
+
 ## What you get (and what you don't)
 
 - **Zero-shot off the shelf**: no WCAG training data, no fitted head. The probabilities are

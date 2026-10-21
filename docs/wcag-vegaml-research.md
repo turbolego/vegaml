@@ -207,3 +207,24 @@ correctly on CPU: a single-question `/v1/decide` answered in **~0.6–0.9 s** an
 the expected verdict (p(violated)=0.9999 for a bare `<img>` with no alt). The dev venv has
 `fla-core` uninstalled; keep it that way for CPU runs. (On a CUDA machine the fla/Triton
 path is the fast one — install it there.)
+
+### GitHub Pages reachability: why the hosted demo says "Cannot reach server"
+
+The published page is HTTPS (`turbolego.github.io`), and browsers **block active mixed
+content**: an HTTPS page may not fetch an `http://` backend. Verified in headless Chromium
+from the live page: `http://127.0.0.1:8080/health` and `http://100.83.145.68:8080/health`
+both "Failed to fetch" (the tailnet backend was up and answering the same URL from the
+server side, so the block is policy, not connectivity).
+
+Consequences for the demo:
+
+| Mode | How | Status |
+|---|---|---|
+| Local | `vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080 --preload --cors` + `python3 docs/wcag-demo/server.py` → open `http://127.0.0.1:8090` (same-origin, no mixed content) | works today |
+| Tailnet HTTPS | `sudo tailscale serve --bg 8080` on the backend box (sudo needed — `tailscale serve` config is root-gated), then `https://100.83.145.68/wcag-demo` → no, the page stays on Pages; point it via `?apiBase=https://100.83.145.68` | pending user's sudo |
+| In-browser ONNX | export the 0.8B reader **and** engine to ONNX Runtime Web (LayaWCAG's pattern; ~0.8 GB int8 bundle vs LayaWCAG's 395 MB) | roadmap |
+
+`--cors`/`--cors-origins` on `vegaml-serve` are necessary but not sufficient for the hosted
+page: they make the cross-origin fetch legal, but only an HTTPS backend satisfies the
+mixed-content rule. The page now ships a "Why doesn't the hosted page work?" help block
+with these exact commands.

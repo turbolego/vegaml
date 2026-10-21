@@ -69,6 +69,21 @@
       <button class="ghost" id="check">Check server</button>
     </div>
     <div class="status" id="serverStatus">No model loaded yet.</div>
+    <details style="margin-top:8px">
+      <summary style="cursor:pointer;font-size:12px;color:var(--ink2)">Why doesn't the hosted page work? →</summary>
+      <div style="font-size:12px;color:var(--ink2);margin-top:6px;line-height:1.5">
+        This page is served via HTTPS (GitHub Pages). Browsers <strong>block HTTPS→HTTP fetches</strong> (mixed-content policy).
+        The demo talks to a local <code>vegaml-serve</code> you run — it has no model of its own.
+        <ul style="margin:4px 0;padding-left:18px">
+          <li><strong>Local (works):</strong> run <code>vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080 --preload --cors</code>
+              + <code>python3 server.py</code> → open <code>http://localhost:8090</code></li>
+          <li><strong>Tailscale HTTPS:</strong> <code>sudo tailscale serve --bg 8080</code>
+              then use <code>https://<machine>.ts.net</code> as the API URL above</li>
+          <li><strong>In-browser ONNX:</strong> not yet — vegaml would need to export the 0.8B reader to ONNX Runtime Web
+              (like <a href="https://github.com/turbolego/LayaWCAG" target="_blank">LayaWCAG</a> does)</li>
+        </ul>
+      </div>
+    </details>
   </div>
 
   <div class="card">

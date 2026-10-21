@@ -87,13 +87,13 @@ def api():
     app.add_middleware(CORSMiddleware, allow_origins=["*"],
                        allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["*"])
     # Alias /model -> /v1/model, /decide -> /v1/decide for remote demo compatibility
-    @app.get("/model")
-    async def model_alias(request: Request):
-        return await app(request.scope, request.receive, request.send)
-
-    @app.post("/decide")
-    async def decide_alias(request: Request):
-        return await app(request.scope, request.receive, request.send)
+    # FastAPI's router makes this trivial: just add the same handler to the new paths
+    from fastapi import Request
+    for route in app.routes:
+        if hasattr(route, 'path') and route.path == "/v1/model":
+            app.router.add_api_route("/model", route.endpoint, methods=["GET"], include_in_schema=False)
+        elif hasattr(route, 'path') and route.path == "/v1/decide":
+            app.router.add_api_route("/decide", route.endpoint, methods=["POST"], include_in_schema=False)
     return app
 
 

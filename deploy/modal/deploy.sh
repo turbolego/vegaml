@@ -50,7 +50,7 @@ echo "==> prewarming model volume (one-off; skips if already warmed)"
 echo "==> deploying web endpoint"
 DEPLOY_OUT=$("$MODAL_CLI" deploy deploy/modal/app.py)
 echo "$DEPLOY_OUT"
-URL=$(echo "$DEPLOY_OUT" | grep -oE "https://[a-z0-9.-]*modal\.host[^ ]*" | head -1 || true)
+URL=$(echo "$DEPLOY_OUT" | grep -oE "https://[a-z0-9.-]*modal\.(run|host)[^ )]*" | head -1 || true)
 
 if [[ -n "${URL:-}" ]]; then
   echo

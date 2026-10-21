@@ -43,8 +43,8 @@ the volume, deploys, smoke-tests `/health` + CORS, and prints the `?apiBase=`
 URL. Or step by step:
 
 ```bash
-modal run deploy/modal/app.py prewarm      # one-off: cache the model in the Volume
-modal deploy deploy/modal/app.py           # deploys the /v1/decide endpoint
+modal run deploy/modal/app.py::prewarm   # one-off: cache the model in the Volume
+modal deploy deploy/modal/app.py          # deploys the /v1/decide endpoint
 ```
 
 ## Use it

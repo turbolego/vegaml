@@ -21,11 +21,13 @@ let criteria = [];        // [{criterion, principle, level, description, instruc
 let lastReport = null;    // the full report we can download
 
 // Default API base: the same-origin /api proxy when the page runs next to server.py,
-// otherwise the local vegaml-serve directly (hosting the static page on GitHub Pages
-// needs the server to run with --cors).
+// otherwise the hosted Modal backend (scale-to-zero; first call wakes it in ~1 min),
+// overridable with ?apiBase=<url>.
+const DEFAULT_REMOTE_API = "https://hummernkloa--api.us-east.modal.run";
+
 function defaultServer() {
   const h = location.hostname;
-  return (h === "localhost" || h === "127.0.0.1") ? "/api" : "http://127.0.0.1:8080";
+  return (h === "localhost" || h === "127.0.0.1") ? "/api" : DEFAULT_REMOTE_API;
 }
 
 async function fetchJSON(url, opt) { const r = await fetch(url, opt); if (!r.ok) throw new Error(`${r.status} ${r.statusText}`); return r.json(); }
@@ -44,7 +46,7 @@ async function checkServer() {
     }
   } catch (e) {
     s.className = "status err";
-    s.textContent = `Cannot reach server (${e.message}). Run:  vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080 --preload --cors`;
+    s.textContent = `Cannot reach server (${e.message}). The backend may still be waking (first call after idle takes ~1 min) — retry Check server, or point the API input at your own vegaml-serve (run: vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080 --preload --cors).`;
   }
 }
 

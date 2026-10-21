@@ -70,17 +70,20 @@
     </div>
     <div class="status" id="serverStatus">No model loaded yet.</div>
     <details style="margin-top:8px">
-      <summary style="cursor:pointer;font-size:12px;color:var(--ink2)">Why doesn't the hosted page work? →</summary>
+      <summary style="cursor:pointer;font-size:12px;color:var(--ink2)">Backend / connection notes →</summary>
       <div style="font-size:12px;color:var(--ink2);margin-top:6px;line-height:1.5">
-        This page is served via HTTPS (GitHub Pages). Browsers <strong>block HTTPS→HTTP fetches</strong> (mixed-content policy).
-        The demo talks to a local <code>vegaml-serve</code> you run — it has no model of its own.
+        This page is served via HTTPS, so it can only reach <strong>HTTPS</strong> backends
+        (browsers block mixed content: HTTPS page → <code>http://</code> fetch).
+        The default backend is the hosted <code>vegaml-serve</code> on Modal
+        (<code>hummernkloa--api.us-east.modal.run</code>) — it scales to zero, so the
+        first call after idle takes ~1 min to wake.
         <ul style="margin:4px 0;padding-left:18px">
-          <li><strong>Local (works):</strong> run <code>vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080 --preload --cors</code>
-              + <code>python3 server.py</code> → open <code>http://localhost:8090</code></li>
-          <li><strong>Tailscale HTTPS:</strong> <code>sudo tailscale serve --bg 8080</code>
-              then use <code>https://<machine>.ts.net</code> as the API URL above</li>
-          <li><strong>In-browser ONNX:</strong> not yet — vegaml would need to export the 0.8B reader to ONNX Runtime Web
-              (like <a href="https://github.com/turbolego/LayaWCAG" target="_blank">LayaWCAG</a> does)</li>
+          <li><strong>Default (hosted, no setup):</strong> just click <em>Check server</em> —
+              it wakes and answers; or override with <code>?apiBase=&lt;url&gt;</code></li>
+          <li><strong>Own machine:</strong> run <code>vegaml-serve --model 0.8b --host 0.0.0.0 --port 8080 --preload --cors</code>
+              and open the local mode (<code>python3 server.py</code> → <code>http://127.0.0.1:8090</code>, API base stays <code>/api</code>)</li>
+          <li><strong>Faster GPU backend:</strong> add <code>gpu="A10G"</code> to the Modal specs in <code>deploy/modal/app.py</code>
+              (the 63-question batch drops from minutes to seconds)</li>
         </ul>
       </div>
     </details>

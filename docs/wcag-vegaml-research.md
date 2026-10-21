@@ -228,3 +228,33 @@ Consequences for the demo:
 page: they make the cross-origin fetch legal, but only an HTTPS backend satisfies the
 mixed-content rule. The page now ships a "Why doesn't the hosted page work?" help block
 with these exact commands.
+
+### Backend hosting options (research, 2026-10-20) — no self-hosting
+
+Constraint: the backend must be **HTTPS** (hosted page is HTTPS), run `vegaml-serve`
+(torch + transformers + 0.8B reader; ~4–5 GB RAM warm), and answer a 63-question
+`/v1/decide` (single question ~1 s on CPU; the full batch is minutes on shared CPU,
+seconds on a T4). Requirements per option: a Python 3.10–3.14 container, ~1–2 GB
+disk for the model (HF cache persists where the provider offers volumes), `--cors`
+on the serve (or host the static page on the same origin).
+
+| Option | Cost | Idle behavior | 63-question latency | Effort |
+|---|---|---|---|---|
+| **Modal (Starter)** — serverless, scale-to-zero | $0/mo + $30 free compute credit; ~$0.3–0.5/hr CPU, $1.10/hr A10G (pay-per-second) | scales to zero; ~60–90 s wake (container + model load from a Modal Volume that persists venv+model) | minutes on 4 vCPU; seconds on A10G | low–med (one Modal app file) |
+| **HF Space, Docker, CPU Basic** | free hardware (2 vCPU / 16 GB); 2026: *creating a compute Space needs a paid (Pro ~$9/mo) account* | sleeps after 48 h idle by default (paid plan: set indefinite) | ~20–40 min on shared 2 vCPU (single question ~1–3 s) | low (one Dockerfile + `vegaml-serve --cors`) |
+| **RunPod T4 on-demand** | ~$0.30–0.50/hr, pay only while running | stop the pod; re-boot ~1–2 min | seconds (GPU) | medium |
+| **Fly.io shared-cpu-1x/2x + 4 GB** | ~$16–17/mo always-on, or ~$0 with auto-suspend (~5 min wake) | auto-stop / always-on | ~2–6 min int8 on dedicated cores | medium (int8 quantize the reader to fit 4 GB) |
+| **Vercel** | free tier (Hobby) | serverless: no persistent process | **not recommended** — every cold start re-loads torch (~2 GB) + the model; 30 min function cap; 1–3 GB function memory; CPU-only. Large-functions (≤5 GB bundle) make it *possible* but it is the worst fit: slow, and you pay for cold starts every idle cycle | — |
+
+**Recommendation.** "As few resources as possible, no own machine" → **Modal Starter**:
+zero idle cost, per-second billing covered by the $30 free credit, and a persistent
+Volume holds the venv + model so wakes are ~1 min, not 7. A stable always-on URL with
+the least ops → **HF Space CPU Basic** (~$9/mo Pro; free hardware; endpoint
+`https://<user>-vegaml-wcag-demo.hf.space`). Fastest UX on demand → **RunPod T4**
+(~$0.35 for an hour of demoing). All three are HTTPS, so the hosted Pages page works
+with `?apiBase=https://…` (add `--cors`); Vercel is best left to hosting the static
+UI (GitHub Pages already does this for free).
+
+Note for any CPU provider: keep `fla-core` out of the image (the Triton "0 active
+drivers" crash above) and run `--device cpu`. The 63-question batch is the slow part
+on CPU — the single-question UX (~1 s) is fine everywhere.

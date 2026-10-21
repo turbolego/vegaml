@@ -1,0 +1,51 @@
+{
+  "version": "1.0",
+  "checkpoint": "vegaml-0.8b",
+  "reader": {
+    "model_type": "reader",
+    "backbone": "gpt2",
+    "model_type_config": "gpt2",
+    "hidden_size": 768,
+    "num_layers": 12,
+    "vocab_size": 50257,
+    "max_seq_len": 4096,
+    "opset": 18,
+    "quantized": true,
+    "quantization_type": "int8"
+  },
+  "engine": {},
+  "pipeline": {
+    "steps": [
+      {
+        "name": "tokenize",
+        "input": "text",
+        "output": "tokens"
+      },
+      {
+        "name": "reader",
+        "input": "tokens",
+        "output": "hidden_states"
+      },
+      {
+        "name": "feature_extraction",
+        "input": "hidden_states",
+        "output": "features"
+      },
+      {
+        "name": "engine",
+        "input": "features",
+        "output": "logits"
+      },
+      {
+        "name": "calibrated_probs",
+        "input": "logits",
+        "output": "probabilities"
+      }
+    ]
+  },
+  "files": {
+    "reader": "reader.int8.onnx",
+    "engine": "engine.onnx",
+    "tokenizer": "tokenizer/"
+  }
+}

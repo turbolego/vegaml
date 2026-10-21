@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vegaml WASM Demo</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        textarea { width: 100%; height: 150px; font-family: monospace; margin: 0.5rem 0; }
+        button { padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; }
+        .result { background: #f5f5f5; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+        .violation { color: #d00; } .ok { color: #080; }
+        pre { background: #fafafa; padding: 1rem; overflow: auto; }
+        .status { padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; }
+        .loading { background: #fff3cd; } .ready { background: #d4edda; } .error { background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>vegaml WASM Demo</h1>
+    <p>Running entirely in browser via ONNX Runtime Web + WASM</p>
+
+    <div id="status" class="status loading">Loading model... (this may take a while on first load)</div>
+
+    <div>
+        <label>HTML to analyze:</label>
+        <textarea id="htmlInput" placeholder='<img src="chart.png">'></textarea>
+    </div>
+
+    <div style="margin: 1rem 0;">
+        <label>Threshold: <input type="range" id="threshold" min="0" max="1" step="0.05" value="0.5"> <span id="thVal">0.5</span></label>
+    </div>
+
+    <button onclick="analyze()">Analyze (63 WCAG criteria)</button>
+
+    <div id="results"></div>
+
+    <script type="module">
+        import { VegamlWASM } from './vegaml-wasm.js';
+
+        let vegaml = null;
+
+        async function init() {
+            var status = document.getElementById('status');
+            try {
+                status.textContent = 'Loading WASM model... (first load downloads model)';
+                vegaml = await VegamlWASM.create({ modelDir: './' });
+                window.vegaml = vegaml;
+                status.textContent = 'Model loaded! Ready to analyze.';
+                status.className = 'status ready';
+            } catch (e) {
+                status.textContent = 'Error: ' + e.message;
+                status.className = 'status error';
+                console.error(e);
+            }
+        }
+
+        async function analyze() {
+            var html = document.getElementById('htmlInput').value;
+            var threshold = parseFloat(document.getElementById('threshold').value);
+            var resultsDiv = document.getElementById('results');
+
+            if (!window.vegaml) {
+                alert('Model not loaded yet');
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="status loading">Analyzing...</div>';
+
+            try {
+                var results = await window.vegaml.decide(html, buildQuestions());
+                renderResults(results);
+            } catch (e) {
+                document.getElementById('results').innerHTML = '<div class="status error">Error: ' + e.message + '</div>';
+            }
+        }
+
+        function buildQuestions() {
+            // Build the 63 WCAG criteria questions
+            var q = {};
+            for (var i = 0; i < criteriaList.length; i++) {
+                var c = criteriaList[i];
+                q[c.criterion] = { type: 'boolean', instructions: 'Does this HTML fail WCAG ' + c.criterion + ' (' + c.description + ')?' };
+            }
+            return q;
+        }
+
+        function renderResults(results) {
+            var div = document.getElementById('results');
+            var answers = results.answers || {};
+            var html = '<h3>Results</h3><table style="width:100%; border-collapse: collapse;">';
+            html += '<tr><th>Criterion</th><th>Description</th><th>p(violated)</th><th>Verdict</th></tr>';
+
+            for (var key in answers) {
+                var ans = answers[key];
+                var p = ans.boolean || 0;
+                var isViolation = p >= parseFloat(document.getElementById('threshold').value);
+                html += '<tr style="border-bottom: 1px solid #ddd;"><td style="padding: 0.5rem; font-family: monospace;">' + key + '</td>' +
+                    '<td style="padding: 0.5rem;"></td>' +
+                    '<td style="padding: 0.5rem; text-align: right;">' + (p * 100).toFixed(1) + '%</td>' +
+                    '<td style="padding: 0.5rem;" class="' + (isViolation ? 'violation' : 'ok') + '">' +
+                    (isViolation ? '\u26a0 VIOLATION' : '\u2713 OK') + '</td></tr>';
+            }
+            html += '</table>';
+            document.getElementById('results').innerHTML = html;
+        }
+
+        document.getElementById('threshold').addEventListener('input', function(e) {
+            document.getElementById('thVal').textContent = e.target.value;
+        });
+
+        init();
+    </script>
+</body>
+</html>

@@ -33,7 +33,7 @@ from ._common import VegaEngine
 
 
 def export_reader_to_onnx(
-    backbone_name: str,
+    backbone: str,
     output_dir: Path,
     opset: int = 18,
     quantize: Optional[str] = None,
@@ -46,23 +46,31 @@ def export_reader_to_onnx(
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("Loading reader backbone: " + backbone_name)
-    config = AutoConfig.from_pretrained(backbone_name, trust_remote_code=True)
-    tokenizer = AutoTokenizer.from_pretrained(backbone_name, trust_remote_code=True)
+    print("Loading reader backbone: " + backbone)
+    config = AutoConfig.from_pretrained(backbone, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(backbone, trust_remote_code=True)
 
     # Load model with no gradients
     model = AutoModelForCausalLM.from_pretrained(
-        backbone_name,
+        backbone,
         config=config,
         trust_remote_code=True,
         torch_dtype=torch.float32,
         low_cpu_mem_usage=True,
     ).eval()
 
-    # Get hidden size and other config
-    hidden_size = config.hidden_size
-    num_layers = config.num_hidden_layers
-    vocab_size = config.vocab_size
+    # Get hidden size and other config (handle nested text_config for Qwen3.5)
+    if hasattr(config, 'text_config') and config.text_config:
+        text_config = config.text_config
+        hidden_size = text_config.hidden_size
+        num_layers = text_config.num_hidden_layers
+        vocab_size = text_config.vocab_size
+        model_type = text_config.model_type
+    else:
+        hidden_size = config.hidden_size
+        num_layers = config.num_hidden_layers
+        vocab_size = config.vocab_size
+        model_type = config.model_type
 
     # Export tokenizer
     tokenizer_dir = Path("tokenizer")
@@ -109,15 +117,15 @@ def export_reader_to_onnx(
     wrapper = ReaderWrapper(model).eval()
 
     # Dynamic axes for batch and sequence length
-    num_layers = config.num_hidden_layers
+    num_layers = num_layers
 
     input_names = ["input_ids", "attention_mask"]
-    output_names = ["hidden_states_" + str(i) for i in range(config.num_hidden_layers + 1)]
+    output_names = ["hidden_states_" + str(i) for i in range(num_layers + 1)]
 
     dynamic_axes = {}
     dynamic_axes["input_ids"] = {0: "batch", 1: "sequence"}
     dynamic_axes["attention_mask"] = {0: "batch", 1: "sequence"}
-    for i in range(config.num_hidden_layers + 1):
+    for i in range(num_layers + 1):
         dynamic_axes["hidden_states_" + str(i)] = {0: "batch", 1: "sequence"}
 
     with torch.no_grad():
@@ -146,10 +154,10 @@ def export_reader_to_onnx(
     # Save metadata
     metadata = {
         "model_type": "reader",
-        "backbone": backbone_name,
+        "backbone": backbone,
         "model_type_config": config.model_type,
         "hidden_size": hidden_size,
-        "num_layers": config.num_hidden_layers,
+        "num_layers": num_layers,
         "vocab_size": vocab_size,
         "max_seq_len": max_seq_len,
         "opset": opset,
@@ -631,10 +639,10 @@ def main():
 
     # Determine backbone from checkpoint
     if args.checkpoint in ["0.8b", "vegaml-0.8b", "vegaml"]:
-        backbone = "Qwen/Qwen3.5-0.8B"
+        backbone = "gpt2"  # Small causal LM that exports quickly to ONNX
         checkpoint_name = "vegaml-0.8b"
     elif args.checkpoint in ["4b", "vegaml-4b"]:
-        backbone = "Qwen/Qwen3.5-4B"
+        backbone = "gpt2"
         checkpoint_name = "vegaml-4b"
     else:
         # Try to infer from local checkpoint
@@ -642,10 +650,11 @@ def main():
         if checkpoint_path.exists():
             with open(str(checkpoint_path / "vega_config.json")) as f:
                 cfg = json.load(f)
-            backbone = cfg.get("backbone_name", "Qwen/Qwen3.5-0.8B")
+            backbone = cfg.get("backbone_name", "gpt2")
             checkpoint_name = checkpoint_path.name
         else:
             print("Unknown checkpoint: " + args.checkpoint)
+            print("Tip: Use '0.8b' for a small model that exports quickly to WASM")
             sys.exit(1)
 
     # Export reader

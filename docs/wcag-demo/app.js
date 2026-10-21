@@ -249,13 +249,13 @@ async function checkServer() {
   const s = $("serverStatus");
   s.className = "status";
   s.textContent = "Checking...";
-  
+
   if (backendMode === "wasm") {
     s.className = "status ok";
     s.textContent = "WASM mode — runs entirely in browser (no server needed)";
     return;
   }
-  
+
   try {
     const h = await fetchJSON(server() + "/health");
     const m = await fetchJSON(server() + "/model").catch(() => null);

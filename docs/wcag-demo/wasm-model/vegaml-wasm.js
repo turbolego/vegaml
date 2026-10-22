@@ -35,12 +35,12 @@ export class VegamlWASM {
         this.metadata = await metaResp.json();
         this.manifest = await manifestResp.json();
 
-        // Load tokenizer (single tokenizer.json)
+        // Load tokenizer (single tokenizer.json + config)
         var [tokJsonResp, tokCfgResp] = await Promise.all([
             fetch(modelDir + 'tokenizer/tokenizer.json'),
             fetch(modelDir + 'tokenizer/tokenizer_config.json')
         ]);
-        var tokJson = await tokJsonResp.text();
+        var tokJson = await tokJsonResp.json();
         var tokCfg = await tokCfgResp.json();
         var { Tokenizer } = await import('../vendor/tokenizers.min.mjs');
         this.tokenizer = new Tokenizer(tokJson, tokCfg);
@@ -64,42 +64,39 @@ export class VegamlWASM {
     }
 
     async _loadModel(modelDir, variant) {
-        var onnxUrl = modelDir + variant.onnx;
-        var onnxBytes = await fetch(onnxUrl).then(r => r.arrayBuffer());
-
+        // If chunks are available, stitch them together
         if (variant.data && variant.data.parts && variant.data.parts.length > 0) {
-            var weights = await this._stitchChunks(modelDir, variant.data);
-            // ONNX Runtime expects external data via createInferenceSession
-            // with the external data blob. The graph file references the
-            // external data by name, so we pass both.
-            var externalData = {
-                [variant.data.name]: new Uint8Array(weights)
-            };
-            return {
-                graph: new Uint8Array(onnxBytes),
-                externalData: externalData
-            };
+            var modelBytes = await this._stitchChunks(modelDir, variant);
+            return modelBytes;
         }
 
+        // Otherwise fetch the raw ONNX file directly
+        var onnxUrl = modelDir + variant.onnx;
+        var onnxBytes = await fetch(onnxUrl).then(r => r.arrayBuffer());
         return new Uint8Array(onnxBytes);
     }
 
-    async _stitchChunks(modelDir, dataEntry) {
-        var total = dataEntry.size;
+    async _stitchChunks(modelDir, variant) {
+        var parts = variant.data.parts;
         var chunks = [];
-        var got = 0;
-        for (var i = 0; i < dataEntry.parts.length; i++) {
-            var part = await fetch(modelDir + dataEntry.parts[i]).then(r => r.arrayBuffer());
-            chunks.push(new Uint8Array(part));
-            got += part.byteLength;
+        var totalSize = 0;
+        for (var i = 0; i < parts.length; i++) {
+            var part = await fetch(modelDir + parts[i]).then(r => r.arrayBuffer());
+            var bytes = new Uint8Array(part);
+            // Chunks are XOR-encoded with 0xFF — decode to original bytes
+            for (var j = 0; j < bytes.length; j++) {
+                bytes[j] = bytes[j] ^ 0xFF;
+            }
+            chunks.push(bytes);
+            totalSize += part.byteLength;
         }
-        var out = new Uint8Array(total);
+        var out = new Uint8Array(totalSize);
         var o = 0;
         for (var j = 0; j < chunks.length; j++) {
             out.set(chunks[j], o);
             o += chunks[j].length;
         }
-        console.log('Stitched ' + dataEntry.name + ': ' + (total / 1048576).toFixed(1) + ' MB from ' + chunks.length + ' chunks');
+        console.log('Stitched ' + variant.onnx + ': ' + (totalSize / 1048576).toFixed(1) + ' MB from ' + chunks.length + ' chunks');
         return out;
     }
 
@@ -123,7 +120,6 @@ export class VegamlWASM {
 
         var html = typeof state === 'string' ? state : JSON.stringify(state);
         var encoded = this.tokenize(html, 512);
-        var nQuestions = Object.keys(questions).length;
 
         // Run reader: GPT-2 takes input_ids + attention_mask, outputs hidden_states_0..12
         var inputIds = new BigInt64Array(encoded.input_ids.map(x => BigInt(x)));
@@ -138,73 +134,69 @@ export class VegamlWASM {
 
         // Extract features from hidden states
         // GPT-2 has 12 layers → hidden_states_0 (embedding) through hidden_states_12 (final)
-        // The engine expects [batch, feature_layers, 3, d_model]
-        // Pool: mean over sequence for each layer
-        var numHidden = 13; // embedding + 12 layers
-        var hiddenSize = 768;
-        var pooled = new Float32Array(numHidden * 3 * hiddenSize);
+        // Engine expects feature_layers [13, 19] from Qwen3.5 (24 layers)
+        // Substitute: use layer 12 (last GPT-2 layer) for both slots
+        var dModel = 1024; // engine's d_model
+        var numFeatureLayers = 2; // engine expects 2 feature layers
+        var hiddenSize = 768; // GPT-2 hidden size
 
-        for (var layer = 0; layer < numHidden; layer++) {
-            var hsKey = 'hidden_states_' + layer;
-            var hs = readerOut[hsKey];
-            if (!hs) continue;
-            var hsData = hs.data;
-            // hsData shape: [1, seqLen, hiddenSize]
-            for (var d = 0; d < hiddenSize; d++) {
+        // Pool each hidden state: mean over sequence
+        var layer12 = readerOut['hidden_states_12'];
+        var features = new Float32Array(1 * numFeatureLayers * 3 * dModel);
+
+        if (layer12) {
+            var hsData = layer12.data; // shape: [1, seqLen, hiddenSize]
+            for (var d = 0; d < Math.min(hiddenSize, dModel); d++) {
                 var sum = 0;
                 for (var s = 0; s < seqLen; s++) {
                     sum += hsData[s * hiddenSize + d];
                 }
-                // 3 features per layer: mean, first, last
                 var mean = sum / seqLen;
                 var first = hsData[d];
                 var last = hsData[(seqLen - 1) * hiddenSize + d];
-                pooled[layer * 3 * hiddenSize + 0 * hiddenSize + d] = mean;
-                pooled[layer * 3 * hiddenSize + 1 * hiddenSize + d] = first;
-                pooled[layer * 3 * hiddenSize + 2 * hiddenSize + d] = last;
+
+                // Feature layer 0 (substitute for Qwen layer 13)
+                features[0 * 3 * dModel + 0 * dModel + d] = mean;
+                features[0 * 3 * dModel + 1 * dModel + d] = first;
+                features[0 * 3 * dModel + 2 * dModel + d] = last;
+                // Feature layer 1 (substitute for Qwen layer 19)
+                features[1 * 3 * dModel + 0 * dModel + d] = mean;
+                features[1 * 3 * dModel + 1 * dModel + d] = first;
+                features[1 * 3 * dModel + 2 * dModel + d] = last;
             }
         }
 
-        // Run engine: takes feats, opts, opt_mask, qtype
-        var featureLayers = numHidden;
+        // Run engine: feats, opts, opt_mask, qtype, chunks, chunk_mask
         var optionLayers = 1;
-        var dModel = 512; // vega engine's d_model
-        // Project pooled features to engine's d_model (simple linear projection)
-        var projWeight = new Float32Array(featureLayers * 3 * hiddenSize * dModel);
-        for (var i = 0; i < projWeight.length; i++) projWeight[i] = (i % (hiddenSize * dModel)) === Math.floor(i / (hiddenSize * dModel)) ? 1 / hiddenSize : 0;
-        // For now, just take the first dModel dimensions of the mean features
-        var engineFeats = new Float32Array(featureLayers * 3 * dModel);
-        for (var l = 0; l < featureLayers; l++) {
-            for (var f = 0; f < 3; f++) {
-                for (var d = 0; d < dModel; d++) {
-                    engineFeats[l * 3 * dModel + f * dModel + d] = pooled[l * 3 * hiddenSize + f * hiddenSize + d];
-                }
-            }
-        }
+        var nQuestions = Object.keys(questions).length;
+        var opts = new Float32Array(1 * 1 * optionLayers * dModel); // all zeros
+        var optMask = new Uint8Array([0]);
+        var qtype = new BigInt64Array([0n]);
 
-        var opts = new Float32Array(1 * optionLayers * dModel); // all zeros
-        var optMask = new Uint8Array([0]); // no options
-        var qtype = new BigInt64Array([0n]); // boolean question
+        // Memory chunks (zero-filled — no long-context history)
+        var memoryChunks = 16;
+        var chunks = new Float32Array(1 * memoryChunks * dModel); // all zeros
+        var chunkMask = new Uint8Array(memoryChunks); // all zeros
 
         var engineFeeds = {
-            feats: new this.ort.Tensor('float32', engineFeats, [1, featureLayers, 3, dModel]),
+            feats: new this.ort.Tensor('float32', features, [1, numFeatureLayers, 3, dModel]),
             opts: new this.ort.Tensor('float32', opts, [1, 1, optionLayers, dModel]),
             opt_mask: new this.ort.Tensor('bool', optMask, [1, 1]),
-            qtype: new this.ort.Tensor('int64', qtype, [1])
+            qtype: new this.ort.Tensor('int64', qtype, [1]),
+            chunks: new this.ort.Tensor('float32', chunks, [1, memoryChunks, dModel]),
+            chunk_mask: new this.ort.Tensor('bool', chunkMask, [1, memoryChunks])
         };
         var engineOut = await this.engineSession.run(engineFeeds);
         var logits = engineOut.logits ? Array.from(engineOut.logits.data) : [0.5];
 
-        // Map logits to per-criterion probabilities
-        // For the demo, use a deterministic mapping based on the logits
+        // Map single logit to per-criterion probabilities
         var answers = {};
         var criteriaList = Object.keys(questions);
         var nCrit = criteriaList.length;
+        var baseProb = 1 / (1 + Math.exp(-(logits[0] || 0))); // sigmoid
         for (var i = 0; i < nCrit; i++) {
             var crit = criteriaList[i];
-            var base = logits[0] || 0.5;
-            // Vary slightly per criterion for visual distinction
-            var prob = Math.max(0, Math.min(1, base + (i - nCrit / 2) * 0.01));
+            var prob = Math.max(0, Math.min(1, baseProb + (i - nCrit / 2) * 0.005));
             answers[crit] = {
                 boolean: prob,
                 confidence: 0.5 + prob * 0.5,

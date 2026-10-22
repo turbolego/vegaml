@@ -15,8 +15,7 @@
           "chunks/reader.int8.onnx.part.ac",
           "chunks/reader.int8.onnx.part.ad",
           "chunks/reader.int8.onnx.part.ae",
-          "chunks/reader.int8.onnx.part.af",
-          "chunks/reader.int8.onnx.part.ag"
+          "chunks/reader.int8.onnx.part.af"
         ]
       },
       "note": "GPT-2 reader, int8 quantized"

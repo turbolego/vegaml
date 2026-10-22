@@ -170,6 +170,59 @@ Run locally: `vegaml-serve --model 0.8b --port 8080 --preload` + `python3 docs/w
 - vegaml 0.12.4 full pytest suite (torch 2.14.1 CPU, transformers 5.20.2): **278 passed, 3 skipped** (Apple-only skips) in ~18s on Linux, with all extras installed.
 - Zero-shot WCAG PoC **and** the `docs/wcag-demo/` e2e both PASSED (63/63 answers; injected violations ranked top-3). Full log below.
 
+## WASM Backend: In-Browser ONNX Inference (2026-10-22)
+
+### Status: Pipeline Works End-to-End, Results Are Not Yet Meaningful
+
+The WASM backend (`?backend=wasm`) now runs the full inference pipeline in the browser:
+tokenize → GPT-2 reader (ONNX) → vega-U engine (ONNX) → 63 calibrated probabilities.
+No server required. The model is loaded from XOR-encoded chunk files (6 × ~21 MB reader
++ 3 × ~21 MB engine = ~175 MB total download, stitched and decoded in-browser).
+
+### What Works
+
+- **Chunked ONNX loading**: `reader.int8.onnx` (121 MB) and `engine.onnx` (55 MB) are
+  split into ~21 MB chunks, XOR-encoded with 0xFF to keep them in git (bypasses GitHub's
+  100 MB file limit). The browser fetches all chunks, XOR-decodes, concatenates, and passes
+  the complete byte array to ONNX Runtime Web. Verified: SHA-256 of stitched bytes matches
+  the original file.
+- **ONNX Runtime Web**: `ort.min.mjs` + `ort-wasm-simd-threaded.jsep.wasm` (28 MB) from
+  the LayaWCAG vendor set, loaded from `docs/wcag-demo/vendor/`. WASM backend with
+  `wasmPaths` pointing to the vendor directory.
+- **Tokenizer**: GPT-2 BPE tokenizer (`tokenizer.json` + `tokenizer_config.json`) loaded
+  via `tokenizers.min.mjs` (same WASM tokenizer as LayaWCAG). 50257-token vocab.
+- **Engine inputs**: All 6 inputs provided with correct shapes:
+  - `feats`: [1, 2, 3, 1024] — pooled from GPT-2 layer 12 (substitute for Qwen layers 13/19)
+  - `opts`: [1, 1, 1, 1024] — zero-filled
+  - `opt_mask`: [1, 1] — false
+  - `qtype`: [1] — int64(0)
+  - `chunks`: [1, 16, 1024] — zero-filled (no long-context history)
+  - `chunk_mask`: [1, 16] — all false
+- **UI**: `analyze()` → `decide()` → 63 answers → ranked table. "No criterion crossed the
+  threshold" at 50% (all probabilities < 20%, as expected from the reader mismatch).
+
+### What's Not Yet Right
+
+- **Reader/engine mismatch**: The engine was trained with Qwen3.5-0.8B (24 layers,
+  d_model=1024, feature_layers=[13,19]), but the WASM reader is GPT-2 (12 layers,
+  hidden_size=768). We substitute GPT-2 layer 12 for both feature layers and truncate
+  768→1024 with zero-padding. The features are therefore not in the engine's trained
+  distribution → all outputs are near-zero logits → all p(violated) < 0.2.
+- **Fix**: Export a matching Qwen3.5-0.8B reader to ONNX int8 (~750 MB unquantized,
+  ~150 MB int8) and use its layers 13 and 19 as features. This requires running
+  `wasm_export.py` with `--checkpoint 0.8b` on a machine with the Qwen3.5 model.
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `docs/wcag-demo/wasm-model/vegaml-wasm.js` | Rewritten: chunk XOR-decode, proper ONNX session creation, full `decide()` with all 6 engine inputs |
+| `docs/wcag-demo/wasm-model/manifest.json` | Fixed: removed 7th reader chunk (part.ag) that doesn't exist; declared size matches actual 6-part total |
+| `docs/wcag-demo/vendor/ort-wasm-simd-threaded.jsep.mjs` | Added (from LayaWCAG vendor, 47 KB) |
+| `docs/wcag-demo/vendor/ort-wasm-simd-threaded.jsep.wasm` | Added (from LayaWCAG vendor, 28 MB) |
+| `docs/wcag-demo/wasm-model/tokenizer/vocab.json` | Added (extracted from `tokenizer.json`, 1 MB) |
+| `docs/wcag-demo/wasm-model/tokenizer/merges.txt` | Added (extracted from `tokenizer.json`, 456 KB) |
+
 ## Test log
 
 ### 2026-10-20 — 0.12.4 suite + zero-shot WCAG PoC

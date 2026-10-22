@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "source": "turbolego/vegaml",
+  "chunk_bytes": 21474836,
+  "variants": {
+    "reader": {
+      "label": "GPT-2 Reader (int8)",
+      "onnx": "reader.int8.onnx",
+      "data": {
+        "name": "reader.int8.onnx.data",
+        "size": 126284157,
+        "parts": [
+          "chunks/reader.int8.onnx.part.aa",
+          "chunks/reader.int8.onnx.part.ab",
+          "chunks/reader.int8.onnx.part.ac",
+          "chunks/reader.int8.onnx.part.ad",
+          "chunks/reader.int8.onnx.part.ae",
+          "chunks/reader.int8.onnx.part.af",
+          "chunks/reader.int8.onnx.part.ag"
+        ]
+      },
+      "note": "GPT-2 reader, int8 quantized"
+    },
+    "engine": {
+      "label": "vega-U Decision Engine",
+      "onnx": "engine.onnx",
+      "data": {
+        "name": "engine.onnx.data",
+        "size": 57589819,
+        "parts": [
+          "chunks/engine.onnx.part.aa",
+          "chunks/engine.onnx.part.ab",
+          "chunks/engine.onnx.part.ac"
+        ]
+      },
+      "note": "vega-U decision engine"
+    }
+  }
+}

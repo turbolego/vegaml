@@ -13,7 +13,6 @@ const EXAMPLES = {
 
 let criteria = [];        // [{criterion, principle, level, description, instructions}]
 let lastReport = null;    // the full report we can download
-let wasmInstance = null;
 
 // Configuration
 const DEFAULT_REMOTE_API = "https://hummernkloa--api.us-east.modal.run";
@@ -66,7 +65,7 @@ async function loadWASM() {
   setStatus("Loading WASM model... (first load downloads ~500MB)", "loading");
   
   try {
-    const { VegamlWASM } = await import('./vegaml-wasm.js');
+    const { VegamlWASM } = await import('./wasm-model/vegaml-wasm.js');
     const instance = await VegamlWASM.create({ modelDir: WASM_MODEL_DIR });
     return instance;
   } catch (e) {
@@ -274,7 +273,7 @@ async function checkServer() {
 async function loadWASMIfNeeded() {
   if (!wasmInstance) {
     setStatus("Loading WASM model... (first load downloads model)", "loading");
-    const { VegamlWASM } = await import('./vegaml-wasm.js');
+    const { VegamlWASM } = await import('./wasm-model/vegaml-wasm.js');
     wasmInstance = await VegamlWASM.create({ modelDir: WASM_MODEL_DIR });
   }
   return wasmInstance;

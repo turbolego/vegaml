@@ -90,38 +90,20 @@ async function analyze() {
         wasmInstance = await loadWASM();
       }
       const questions = buildQuestions();
-      const out = await wasmInstance.decide($("html").value.trim(), buildQuestions());
-      out.latency_ms = Math.round(performance.now() - performance.timing.navigationStart);
+      out = await wasmInstance.decide($("html").value.trim(), buildQuestions());
+      out.latency_ms = Math.round(performance.now() - t0);
       out.mode = "wasm";
-      return out;
     } else {
       // Modal backend
       const apiBase = server();
       const decideUrl = apiBase.startsWith("/api") ? apiBase + "/decide" : apiBase + "/v1/decide";
-      const out = await fetchJSON(decideUrl, {
+      out = await fetchJSON(decideUrl, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ state: $("html").value.trim(), questions: buildQuestions() }),
       });
-      return out;
     }
-  } catch (e) {
-    throw e;
-  } finally {
-    $("analyze").disabled = false;
-  }
-}
-
-async function analyze() {
-  const html = $("html").value.trim();
-  if (!html) { setStatus("Paste some HTML first.", "err"); return; }
-  const th = parseFloat($("threshold").value) || 0.5;
-  $("analyze").disabled = true;
-  setStatus("Asking vegaml 63 questions...", "loading");
-  
-  try {
-    const out = await analyze();
-    const ms = Math.round(performance.now() - performance.timing.navigationStart);
+    const ms = Math.round(performance.now() - t0);
     lastReport = { html: $("html").value.trim(), threshold: parseFloat($("threshold").value) || 0.5, latency_ms: ms, server: server(), criteria: [], raw: out };
     const answers = out.answers || {};
     const rows = criteria.map((c) => {
@@ -137,8 +119,8 @@ async function analyze() {
     rows.sort((x, y) => (y.p_violated ?? -1) - (x.p_violated ?? -1));
     lastReport.criteria = rows;
     const violations = rows.filter((r) => r.p_violated != null && r.p_violated >= (parseFloat($("threshold").value) || 0.5));
-    render(rows, violations, out, 0);
-    setStatus("Done in " + (out.latency_ms || 0) + " ms — " + violations.length + " of " + rows.length + " criteria at or above p ≥ " + ($("threshold").value || 0.5), "ok");
+    render(rows, violations, out, ms);
+    setStatus("Done in " + (out.latency_ms || ms) + " ms — " + violations.length + " of " + rows.length + " criteria at or above p ≥ " + ($("threshold").value || 0.5), "ok");
   } catch (e) {
     setStatus("decide() failed: " + e.message, "err");
   } finally {

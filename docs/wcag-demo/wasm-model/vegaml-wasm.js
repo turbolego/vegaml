@@ -21,11 +21,11 @@ export class VegamlWASM {
 
     async _init(modelDir) {
         // Load onnxruntime-web from local vendor file
-        var ort = await import('../../vendor/ort.min.mjs');
+        var ort = await import('../vendor/ort.min.mjs');
         this.ort = ort;
 
         // Set WASM paths
-        this.ort.env.wasm.wasmPaths = new URL('../../vendor/', import.meta.url).href;
+        this.ort.env.wasm.wasmPaths = new URL('../vendor/', import.meta.url).href;
         this.ort.env.wasm.numThreads = (typeof self !== 'undefined' && self.crossOriginIsolated) ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
 
         // Load metadata
@@ -69,7 +69,7 @@ export class VegamlWASM {
         var chatTemplate = await chatTemplateResp.text();
 
         // Load tokenizers from vendor
-        var { Tokenizer } = await import('../../vendor/tokenizers.min.mjs');
+        var { Tokenizer } = await import('../vendor/tokenizers.min.mjs');
         
         // Create tokenizer from vocab/merges
         this.tokenizer = await Tokenizer.fromBlobJSON(JSON.stringify({
